@@ -52,7 +52,7 @@ Map<String, dynamic> extractTypeJson(Object? eventParam) {
       (eventParam as Iterable).forEach((element) {
         children.add(extractType(element));
       });
-    } else {
+    } else if ((eventParam as Iterable).length > 0) {
       children.add(subtype);
     }
 
