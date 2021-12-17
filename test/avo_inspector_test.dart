@@ -3,12 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:avo_inspector/avo_inspector.dart';
 
 void main() {
-  test('adds one to input values', () {
-    final calculator = Calculator();
-    expect(calculator.addOne(2), 3);
-    expect(calculator.addOne(-7), -6);
-    expect(calculator.addOne(0), 1);
-  });
 
   test('int parameters are extracted as "int"', () {
     final result = extractType(1);
@@ -56,5 +50,11 @@ void main() {
     final result = extractType(Calculator());
 
     expect(result, "unknown");
+  });
+
+  test('null object is extracted as null', () {
+    final result = extractType(null);
+
+    expect(result, "null");
   });
 }
