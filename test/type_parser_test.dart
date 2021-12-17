@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:avo_inspector/avo_inspector.dart';
 
 void main() {
-
   test('int parameters are extracted as "int"', () {
     final result = extractType(1);
 
@@ -29,7 +28,7 @@ void main() {
   });
 
   test('list parameters are extracted as "list"', () {
-    final result = extractType([1,2,3]);
+    final result = extractType([1, 2, 3, null]);
 
     expect(result, "list");
   });
@@ -56,5 +55,38 @@ void main() {
     final result = extractType(null);
 
     expect(result, "null");
+  });
+
+  test('empty list is extracted with subtypes', () {
+    final result = extractTypeJson([]);
+
+    expect(result, {"propertyType": "list", "children": []});
+  });
+
+  test('list with only null is extracted with subtypes', () {
+    final result = extractTypeJson([null]);
+
+    expect(result, {
+      "propertyType": "list",
+      "children": ["null"]
+    });
+  });
+
+  test('list parameters are extracted with subtypes', () {
+    final result = extractTypeJson([1, 2, 3, null]);
+
+    expect(result, {
+      "propertyType": "list",
+      "children": ["int", "null"]
+    });
+  });
+
+  test('list parameters with mixed types are extracted as unknown', () {
+    final result = extractTypeJson([1, 2, 3, "", null]);
+
+    expect(result, {
+      "propertyType": "list",
+      "children": ["int", "string", "null"]
+    });
   });
 }
