@@ -1,10 +1,6 @@
 library avo_inspector;
 
-import 'dart:convert';
-
-/// A Calculator.
 class Calculator {
-  /// Returns [value] plus 1.
   int addOne(int value) => value + 1;
 }
 
@@ -33,39 +29,55 @@ String extractType(Object? eventParam) {
 }
 
 Map<String, dynamic> extractTypeJson(Object? eventParam) {
-  final type = extractType(eventParam);
+  try {
+    final type = extractType(eventParam);
 
-  if (type == "list") {
-    final runtimeType = eventParam.runtimeType.toString().toLowerCase();
+    if (type == "list") {
+      final runtimeType = eventParam.runtimeType.toString().toLowerCase();
 
-    var subtype = runtimeType.substring(
-        runtimeType.indexOf("<") + 1, runtimeType.indexOf(">"));
+      var subtype = runtimeType.substring(
+          runtimeType.indexOf("<") + 1, runtimeType.indexOf(">"));
 
-    final isOptional = subtype.contains("?");
+      final isOptional = subtype.contains("?");
 
-    if (isOptional) {
-      subtype = subtype.substring(0, subtype.length - 1);
-    }
+      if (isOptional) {
+        subtype = subtype.substring(0, subtype.length - 1);
+      }
 
-    var children = <String>{};
-    if (subtype == "dynamic" || subtype == "object") {
-      (eventParam as Iterable).forEach((element) {
-        children.add(extractType(element));
+      var children = <String>{};
+      if (subtype == "dynamic" || subtype == "object") {
+        (eventParam as Iterable).forEach((element) {
+          children.add(extractType(element));
+        });
+      } else if ((eventParam as Iterable).length > 0) {
+        children.add(subtype);
+      }
+
+      if (isOptional) {
+        children.add("null");
+      }
+
+      return {"propertyType": type, "children": children.toList()};
+    } else if (type == "object") {
+      Map map = eventParam as Map;
+
+      var children = [];
+
+      map.forEach((key, value) {
+        children.add({
+          "propertyName": key,
+        }..addAll(extractTypeJson(value)));
       });
-    } else if ((eventParam as Iterable).length > 0) {
-      children.add(subtype);
+      return {"propertyType": type, "children": children};
+    } else {
+      return {
+        "propertyType": type,
+      };
     }
-
-    if (isOptional) {
-      children.add("null");
-    }
-
-    Map<String, dynamic> result = {"propertyType": type, "children": children};
-
-    return result;
-  } else {
+  } catch (e) {
+    print("Fialed to extrac schema from $eventParam");
     return {
-      "propertyType": type,
+      "propertyType": "unknown",
     };
   }
 }

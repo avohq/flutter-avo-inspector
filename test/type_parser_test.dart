@@ -35,14 +35,6 @@ void main() {
     });
   });
 
-  test('map parameters are extracted as "object"', () {
-    final result = extractTypeJson({"one": 1, "two": 2, "three": 3});
-
-    expect(result, {
-      "propertyType": "object",
-    });
-  });
-
   test('Random object parameters are extracted as "unknown"', () {
     final result = extractTypeJson(Calculator());
 
@@ -122,6 +114,39 @@ void main() {
     expect(result, {
       "propertyType": "list",
       "children": ["int", "string", "null"]
+    });
+  });
+
+  test('map is extracted as object with fields', () {
+    final result = extractTypeJson({
+      "one": 1,
+      "two": 2,
+      "three": null,
+      "four": "yes",
+      "five": [""],
+      "six": {"a": 1}
+    });
+
+    expect(result, {
+      "propertyType": "object",
+      "children": [
+        {"propertyName": "one", "propertyType": "int"},
+        {"propertyName": "two", "propertyType": "int"},
+        {"propertyName": "three", "propertyType": "null"},
+        {"propertyName": "four", "propertyType": "string"},
+        {
+          "propertyName": "five",
+          "propertyType": "list",
+          "children": ["string"]
+        },
+        {
+          "propertyName": "six",
+          "propertyType": "object",
+          "children": [
+            {"propertyName": "a", "propertyType": "int"}
+          ]
+        }
+      ]
     });
   });
 }
