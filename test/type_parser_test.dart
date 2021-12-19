@@ -149,4 +149,24 @@ void main() {
       ]
     });
   });
+
+  test('extracts a schema', () {
+    final objValue = {
+      "one": 1,
+      "two": 2,
+      "three": null,
+      "four": "yes",
+      "five": [""],
+      "six": {"a": 1}
+    };
+    final result = extractSchemaFromEvent(
+        eventParams: {"obj_param": objValue, "int_param": 1});
+
+    expect(result, [
+      // ignore: unnecessary_cast
+      {"propertyName": ("obj_param" as dynamic)}
+        ..addAll(extractTypeJson(objValue)),
+      {"propertyName": "int_param"}..addAll({"propertyType": "int"})
+    ]);
+  });
 }

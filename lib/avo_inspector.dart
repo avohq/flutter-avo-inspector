@@ -1,10 +1,12 @@
 library avo_inspector;
 
+import 'package:flutter/material.dart';
+
 class Calculator {
   int addOne(int value) => value + 1;
 }
 
-String runtimeTypeToAvoType(String? type) {
+String _runtimeTypeToAvoType(String? type) {
   if (type == null) {
     return "null";
   }
@@ -22,15 +24,29 @@ String runtimeTypeToAvoType(String? type) {
   return "unknown";
 }
 
-String extractType(Object? eventParam) {
+String _extractType(Object? eventParam) {
   final type = eventParam?.runtimeType.toString().toLowerCase();
 
-  return runtimeTypeToAvoType(type);
+  return _runtimeTypeToAvoType(type);
 }
 
+List<Map<String, dynamic>> extractSchemaFromEvent(
+    {required Map<String, dynamic> eventParams}) {
+  List<Map<String, dynamic>> children = [];
+
+  eventParams.forEach((key, value) {
+    children.add({
+      "propertyName": key,
+    }..addAll(extractTypeJson(value)));
+  });
+
+  return children;
+}
+
+@visibleForTesting
 Map<String, dynamic> extractTypeJson(Object? eventParam) {
   try {
-    final type = extractType(eventParam);
+    final type = _extractType(eventParam);
 
     if (type == "list") {
       final runtimeType = eventParam.runtimeType.toString().toLowerCase();
@@ -47,7 +63,7 @@ Map<String, dynamic> extractTypeJson(Object? eventParam) {
       var children = <String>{};
       if (subtype == "dynamic" || subtype == "object") {
         (eventParam as Iterable).forEach((element) {
-          children.add(extractType(element));
+          children.add(_extractType(element));
         });
       } else if ((eventParam as Iterable).length > 0) {
         children.add(subtype);
@@ -59,15 +75,9 @@ Map<String, dynamic> extractTypeJson(Object? eventParam) {
 
       return {"propertyType": type, "children": children.toList()};
     } else if (type == "object") {
-      Map map = eventParam as Map;
+      Map<String, dynamic> map = eventParam as Map<String, dynamic>;
 
-      var children = [];
-
-      map.forEach((key, value) {
-        children.add({
-          "propertyName": key,
-        }..addAll(extractTypeJson(value)));
-      });
+      var children = extractSchemaFromEvent(eventParams: map);
       return {"propertyType": type, "children": children};
     } else {
       return {
