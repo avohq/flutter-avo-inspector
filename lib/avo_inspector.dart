@@ -1,33 +1,40 @@
 library avo_inspector;
 
-import 'package:flutter/material.dart';
+import 'package:avo_inspector/avo_parser.dart';
 
-class Calculator {
-  int addOne(int value) => value + 1;
-}
+enum AvoInspectorEnv { prod, dev, staging }
 
-/* String _runtimeTypeToAvoType(String? type) {
-  if (type == null) {
-    return "null";
+class AvoInspector {
+  String apiKey;
+  AvoInspectorEnv env;
+  String appVersion;
+  String appName;
+
+  bool _shouldLog = false;
+
+  AvoInspector(
+      {required this.apiKey,
+      required this.env,
+      required this.appVersion,
+      required this.appName});
+
+  List<Map<String, dynamic>> trackSchemaFromEvent(
+      String eventName, Map<String, dynamic> eventProperties) {
+    if (_shouldLog) {
+      print("event name $eventName");
+    }
+
+    final parsedParams =
+        extractSchemaFromEventParams(eventParams: eventProperties);
+
+    if (_shouldLog) {
+      print("event params $parsedParams");
+    }
+
+    return parsedParams;
   }
 
-  if (type.contains("list") || type.contains(("set"))) {
-    return "list";
-  } else if (type.contains("map")) {
-    return "object";
-  } else if (["double", "float"].contains(type)) {
-    return "float";
-  } else if (["string", "int", "bool"].contains(type)) {
-    return type;
+  set shouldLog(bool val) {
+    _shouldLog = val;
   }
-
-  return "unknown";
 }
-
-String _extractType(Object? eventParam) {
-  final type = eventParam?.runtimeType.toString().toLowerCase();
-
-  return _runtimeTypeToAvoType(type);
-} */
-
-

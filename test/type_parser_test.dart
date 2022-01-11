@@ -1,4 +1,5 @@
-import 'package:avo_inspector/avo_inspector.dart';
+import 'dart:math';
+
 import 'package:avo_inspector/avo_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,7 +37,7 @@ void main() {
   });
 
   test('Random object parameters are extracted as "unknown"', () {
-    final result = extractTypeJson(Calculator());
+    final result = extractTypeJson(Point(0, 0));
 
     expect(result, {
       "propertyType": "unknown",
