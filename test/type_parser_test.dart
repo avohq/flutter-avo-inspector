@@ -1,6 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:math';
 
-import 'package:avo_inspector/avo_inspector.dart';
+import 'package:avo_inspector/avo_parser.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('int parameters are extracted as "int"', () {
@@ -36,7 +37,7 @@ void main() {
   });
 
   test('Random object parameters are extracted as "unknown"', () {
-    final result = extractTypeJson(Calculator());
+    final result = extractTypeJson(Point(0, 0));
 
     expect(result, {
       "propertyType": "unknown",
@@ -159,7 +160,7 @@ void main() {
       "five": [""],
       "six": {"a": 1}
     };
-    final result = extractSchemaFromEvent(
+    final result = extractSchemaFromEventParams(
         eventParams: {"obj_param": objValue, "int_param": 1});
 
     expect(result, [
