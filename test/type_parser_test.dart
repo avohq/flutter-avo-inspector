@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:avo_inspector/avo_inspector.dart';
+import 'package:avo_inspector/avo_parser.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('int parameters are extracted as "int"', () {
@@ -159,7 +159,7 @@ void main() {
       "five": [""],
       "six": {"a": 1}
     };
-    final result = extractSchemaFromEvent(
+    final result = extractSchemaFromEventParams(
         eventParams: {"obj_param": objValue, "int_param": 1});
 
     expect(result, [
