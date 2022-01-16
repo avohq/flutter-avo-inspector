@@ -10,7 +10,7 @@ class AvoInspector {
   String appVersion;
   String appName;
 
-  bool _shouldLog = false;
+  static bool _shouldLog = false;
 
   AvoInspector(
       {required this.apiKey,
@@ -19,7 +19,8 @@ class AvoInspector {
       required this.appName});
 
   List<Map<String, dynamic>> trackSchemaFromEvent(
-      String eventName, Map<String, dynamic> eventProperties) {
+      {required String eventName,
+      required Map<String, dynamic> eventProperties}) {
     if (_shouldLog) {
       print("event name $eventName");
     }
@@ -36,5 +37,9 @@ class AvoInspector {
 
   set shouldLog(bool val) {
     _shouldLog = val;
+  }
+
+  static void enableLogs(bool enable) {
+    _shouldLog = enable;
   }
 }
