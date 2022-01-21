@@ -26,7 +26,7 @@ void main() {
   });
 
   test('trackSchemaFromEvent prints when the logs are enabled', () {
-    sut.shouldLog = true;
+    AvoInspector.shouldLog = true;
     sut.trackSchemaFromEvent(eventName: "Event 0", eventProperties: {"param0" : "value0", "param1" : "value1"});
   });
 }
