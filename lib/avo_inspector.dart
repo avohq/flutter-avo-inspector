@@ -2,7 +2,6 @@ library avo_inspector;
 
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:avo_inspector/avo_parser.dart';
-import 'package:uuid/uuid.dart';
 
 enum AvoInspectorEnv { prod, dev, staging }
 
