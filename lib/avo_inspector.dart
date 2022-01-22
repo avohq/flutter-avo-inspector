@@ -2,6 +2,8 @@ library avo_inspector;
 
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:avo_inspector/avo_parser.dart';
+import 'package:avo_inspector/avo_session_tracker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum AvoInspectorEnv { prod, dev, staging }
 
@@ -19,9 +21,9 @@ class AvoInspector {
       required this.appVersion,
       required this.appName});
 
-  List<Map<String, dynamic>> trackSchemaFromEvent(
+  Future<List<Map<String, dynamic>>> trackSchemaFromEvent(
       {required String eventName,
-      required Map<String, dynamic> eventProperties}) {
+      required Map<String, dynamic> eventProperties}) async {
     if (shouldLog) {
       print("event name $eventName");
     }
@@ -40,18 +42,11 @@ class AvoInspector {
         appVersion: this.appVersion,
         libVersion: "1.0");
 
-    networkHandler.callInspectorWith(events: [
-      SessionStartedBody(
-          apiKey: this.apiKey,
-          appName: this.appName,
-          appVersion: this.appVersion,
-          libVersion: networkHandler.libVersion,
-          env: networkHandler.envName,
-          messageId: Uuid().toString(),
-          trackingId: "unique persistent id",
-          createdAt: DateTime.now().toIso8601String(),
-          sessionId: "unique id per session")
-    ]);
+    final sessionsTracker = AvoSessionTracker(
+        networkCallsHandler: networkHandler,
+        sharedPreferences: await SharedPreferences.getInstance());
+    sessionsTracker
+        .startOrProlongSession(DateTime.now().millisecondsSinceEpoch);
 
     return parsedParams;
   }

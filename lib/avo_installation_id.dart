@@ -7,12 +7,10 @@ class AvoInstallationId {
 
   static const installationIdKey = "AvoInspectorInstallationId";
 
-  static Future<String> getInstallationId() async {
+  static String getInstallationId(SharedPreferences sharedPrefs) {
     if (AvoInstallationId._installationId != null) {
       return AvoInstallationId._installationId!;
     }
-
-    final sharedPrefs = await SharedPreferences.getInstance();
 
     final storedInstallationId = sharedPrefs.getString(installationIdKey);
     

@@ -1,4 +1,3 @@
-import 'package:avo_inspector/avo_installation_id.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:avo_inspector/avo_inspector.dart';
@@ -87,7 +86,7 @@ class AvoNetworkCallsHandler {
       required this.appVersion,
       required this.libVersion});
 
-  SessionStartedBody bodyForSessionStaretedCall() {
+  SessionStartedBody bodyForSessionStaretedCall({required String sessionId, required String installationId}) {
     return SessionStartedBody(
         apiKey: this.apiKey,
         appName: this.appName,
@@ -95,9 +94,9 @@ class AvoNetworkCallsHandler {
         libVersion: this.libVersion,
         env: this.envName,
         messageId: Uuid().toString(),
-        trackingId: AvoInstallationId.getInstallationId(),
+        trackingId: installationId,
         createdAt: DateTime.now().toIso8601String(),
-        sessionId: "unique id per session");
+        sessionId: sessionId);
   }
 
   void callInspectorWith(
