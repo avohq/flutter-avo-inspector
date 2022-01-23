@@ -3,23 +3,23 @@ import 'package:uuid/uuid.dart';
 
 class AvoInstallationId {
 
-  static String? _installationId;
+  String? _installationId;
 
   static const installationIdKey = "AvoInspectorInstallationId";
 
-  static String getInstallationId(SharedPreferences sharedPrefs) {
-    if (AvoInstallationId._installationId != null) {
-      return AvoInstallationId._installationId!;
+  String getInstallationId(SharedPreferences sharedPrefs) {
+    if (_installationId != null) {
+      return _installationId!;
     }
 
     final storedInstallationId = sharedPrefs.getString(installationIdKey);
     
     if (storedInstallationId != null) {
-      AvoInstallationId._installationId = storedInstallationId;
+      _installationId = storedInstallationId;
       return storedInstallationId;
     } else {
       final newInstallationId = Uuid().v1();
-      AvoInstallationId._installationId = newInstallationId;
+      _installationId = newInstallationId;
       sharedPrefs.setString(AvoInstallationId.installationIdKey, newInstallationId);
       return newInstallationId;
     }

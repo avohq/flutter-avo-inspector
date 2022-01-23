@@ -45,7 +45,7 @@ class AvoInspector {
     final sessionsTracker = AvoSessionTracker(
         networkCallsHandler: networkHandler,
         sharedPreferences: await SharedPreferences.getInstance());
-    sessionsTracker
+     sessionsTracker
         .startOrProlongSession(DateTime.now().millisecondsSinceEpoch);
 
     return parsedParams;

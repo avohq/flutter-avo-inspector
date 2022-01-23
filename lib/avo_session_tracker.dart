@@ -10,7 +10,7 @@ class AvoSessionTracker {
   static const sessionLengthMillis = 5 * 60 * 1000;
 
   String? _sessionId;
-  get sessionId async {
+  get sessionId {
     if (_sessionId == null) {
       final storedSessionId = sharedPreferences.getString(sessionIdKey);
 
@@ -25,7 +25,7 @@ class AvoSessionTracker {
   }
 
   int? _lastSessionTimestamp;
-  get lastSessionTimestamp async {
+  get lastSessionTimestamp {
     if (_lastSessionTimestamp == null || _lastSessionTimestamp == 0) {
       final storedTimestamp = sharedPreferences.getInt(lastSessionTimestampKey);
 
@@ -51,7 +51,7 @@ class AvoSessionTracker {
     _sessionId = newSessionId;
   }
 
-  Future<void> startOrProlongSession(int atTimeMillis) async {
+  void startOrProlongSession(int atTimeMillis) {
     final timeSinceLastSession = atTimeMillis - lastSessionTimestamp;
 
     if (timeSinceLastSession > sessionLengthMillis) {
