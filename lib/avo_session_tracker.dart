@@ -41,6 +41,7 @@ class AvoSessionTracker {
 
   final AvoNetworkCallsHandler networkCallsHandler;
   final SharedPreferences sharedPreferences;
+  final AvoInstallationId avoInstallationId = AvoInstallationId();
 
   AvoSessionTracker(
       {required this.networkCallsHandler, required this.sharedPreferences});
@@ -60,7 +61,7 @@ class AvoSessionTracker {
         networkCallsHandler.bodyForSessionStaretedCall(
             sessionId: sessionId,
             installationId:
-                AvoInstallationId.getInstallationId(sharedPreferences))
+                avoInstallationId.getInstallationId(sharedPreferences))
       ]);
     }
 

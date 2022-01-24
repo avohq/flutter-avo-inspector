@@ -93,7 +93,7 @@ class AvoNetworkCallsHandler {
         appVersion: this.appVersion,
         libVersion: this.libVersion,
         env: this.envName,
-        messageId: Uuid().toString(),
+        messageId: Uuid().v1(),
         trackingId: installationId,
         createdAt: DateTime.now().toIso8601String(),
         sessionId: sessionId);
