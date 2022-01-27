@@ -8,7 +8,7 @@ void main() {
   });
 
   test('Creates installation id if not present', () async {
-    // Givem
+    // Given
     SharedPreferences.setMockInitialValues({});
     SharedPreferences prefs = await SharedPreferences.getInstance();
 

@@ -1,6 +1,8 @@
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'test_utils.dart';
+
 void main() {
   test('bodyForSessionStaretedCall is properly built', () {
     // Given
@@ -23,8 +25,7 @@ void main() {
     expect(sessionStartedBody.libVersion, "0.1");
     expect(sessionStartedBody.env, "dev");
     expect(sessionStartedBody.env, "dev");
-    expect(sessionStartedBody.messageId.split("-").length, 5);
-    expect(sessionStartedBody.messageId.length, 36);
+    expect(isUuid(sessionStartedBody.messageId), true);
     expect(sessionStartedBody.trackingId, "installationId");
     expect(sessionStartedBody.sessionId, "sessionId");
     expect(sessionStartedBody.createdAt.length, 26);

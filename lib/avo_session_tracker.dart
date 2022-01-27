@@ -4,13 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 class AvoSessionTracker {
-  static const sessionIdKey = "AvosSessionId";
+  static const sessionIdKey = "AvoSessionId";
   static const lastSessionTimestampKey = "AvoSessionTimestampId";
 
   static const sessionLengthMillis = 5 * 60 * 1000;
 
   String? _sessionId;
-  get sessionId {
+  String get sessionId {
     if (_sessionId == null) {
       final storedSessionId = sharedPreferences.getString(sessionIdKey);
 
@@ -21,7 +21,7 @@ class AvoSessionTracker {
       }
     }
 
-    return _sessionId;
+    return _sessionId!;
   }
 
   int? _lastSessionTimestamp;
@@ -55,14 +55,14 @@ class AvoSessionTracker {
   void startOrProlongSession(int atTimeMillis) {
     final timeSinceLastSession = atTimeMillis - lastSessionTimestamp;
 
-    if (timeSinceLastSession > sessionLengthMillis) {
+    if (timeSinceLastSession >= sessionLengthMillis) {
       _updateSessionId();
-      networkCallsHandler.callInspectorWith(events: [
-        networkCallsHandler.bodyForSessionStaretedCall(
-            sessionId: sessionId,
-            installationId:
-                avoInstallationId.getInstallationId(sharedPreferences))
-      ]);
+      final sessionStartedBody = networkCallsHandler.bodyForSessionStaretedCall(
+          sessionId: sessionId,
+          installationId:
+              avoInstallationId.getInstallationId(sharedPreferences));
+
+      networkCallsHandler.callInspectorWith(events: [sessionStartedBody]);
     }
 
     _lastSessionTimestamp = atTimeMillis;
