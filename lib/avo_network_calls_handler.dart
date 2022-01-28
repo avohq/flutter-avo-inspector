@@ -1,7 +1,9 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:avo_inspector/avo_inspector.dart';
+
+import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
+
+import 'package:avo_inspector/avo_inspector.dart';
 
 abstract class BaseBody {
   String type = "base";
@@ -70,6 +72,41 @@ class SessionStartedBody extends BaseBody {
             sessionId: sessionId);
 }
 
+class EventSchemaBody extends BaseBody {
+  final String type = "event";
+
+  final String eventName;
+  final Map<String, dynamic> eventSchema;
+
+  EventSchemaBody({
+    required apiKey,
+    required appName,
+    required appVersion,
+    required libVersion,
+    required env,
+    required messageId,
+    required trackingId,
+    required createdAt,
+    required sessionId,
+    required this.eventName,
+    required this.eventSchema,
+  }) : super(
+            apiKey: apiKey,
+            appName: appName,
+            appVersion: appVersion,
+            libVersion: libVersion,
+            env: env,
+            messageId: messageId,
+            trackingId: trackingId,
+            createdAt: createdAt,
+            sessionId: sessionId);
+
+  Map<String, dynamic> toJson() {
+    return super.toJson()
+      ..addAll({'eventName': eventName, 'eventProperties': eventSchema});
+  }
+}
+
 class AvoNetworkCallsHandler {
   String apiKey;
   String envName;
@@ -86,7 +123,8 @@ class AvoNetworkCallsHandler {
       required this.appVersion,
       required this.libVersion});
 
-  SessionStartedBody bodyForSessionStaretedCall({required String sessionId, required String installationId}) {
+  SessionStartedBody bodyForSessionStaretedCall(
+      {required String sessionId, required String installationId}) {
     return SessionStartedBody(
         apiKey: this.apiKey,
         appName: this.appName,
@@ -97,6 +135,25 @@ class AvoNetworkCallsHandler {
         trackingId: installationId,
         createdAt: DateTime.now().toIso8601String(),
         sessionId: sessionId);
+  }
+
+  EventSchemaBody bodyForEventSchemaCall(
+      {required String eventName,
+      required Map<String, dynamic> eventSchema,
+      required String sessionId,
+      required String installationId}) {
+    return EventSchemaBody(
+        apiKey: this.apiKey,
+        appName: this.appName,
+        appVersion: this.appVersion,
+        libVersion: this.libVersion,
+        env: this.envName,
+        messageId: Uuid().v1(),
+        trackingId: installationId,
+        createdAt: DateTime.now().toIso8601String(),
+        sessionId: sessionId,
+        eventName: eventName,
+        eventSchema: eventSchema);
   }
 
   void callInspectorWith(
