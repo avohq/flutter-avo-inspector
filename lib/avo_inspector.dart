@@ -1,5 +1,6 @@
 library avo_inspector;
 
+import 'package:avo_inspector/avo_installation_id.dart';
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:avo_inspector/avo_parser.dart';
 import 'package:avo_inspector/avo_session_tracker.dart';
@@ -14,6 +15,8 @@ class AvoInspector {
   String appName;
 
   static bool shouldLog = false;
+
+  final AvoInstallationId avoInstallationId = AvoInstallationId();
 
   AvoInspector(
       {required this.apiKey,
@@ -35,6 +38,8 @@ class AvoInspector {
       print("event params $parsedParams");
     }
 
+    final sharedPrefs = await SharedPreferences.getInstance();
+
     final networkHandler = AvoNetworkCallsHandler(
         apiKey: this.apiKey,
         envName: this.env.toString(),
@@ -44,9 +49,18 @@ class AvoInspector {
 
     final sessionsTracker = AvoSessionTracker(
         networkCallsHandler: networkHandler,
-        sharedPreferences: await SharedPreferences.getInstance());
-     sessionsTracker
+        sharedPreferences: sharedPrefs,
+        avoInstallationId: avoInstallationId);
+    sessionsTracker
         .startOrProlongSession(DateTime.now().millisecondsSinceEpoch);
+
+    final eventSchema = networkHandler.bodyForEventSchemaCall(
+        eventName: eventName,
+        eventSchema: parsedParams,
+        sessionId: sessionsTracker.sessionId,
+        installationId: avoInstallationId.getInstallationId(sharedPrefs));
+
+    networkHandler.callInspectorWith(events: [eventSchema]);
 
     return parsedParams;
   }

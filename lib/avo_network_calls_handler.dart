@@ -76,7 +76,7 @@ class EventSchemaBody extends BaseBody {
   final String type = "event";
 
   final String eventName;
-  final Map<String, dynamic> eventSchema;
+  final List<Map<String, dynamic>> eventSchema;
 
   EventSchemaBody({
     required apiKey,
@@ -139,7 +139,7 @@ class AvoNetworkCallsHandler {
 
   EventSchemaBody bodyForEventSchemaCall(
       {required String eventName,
-      required Map<String, dynamic> eventSchema,
+      required List<Map<String, dynamic>> eventSchema,
       required String sessionId,
       required String installationId}) {
     return EventSchemaBody(
@@ -176,7 +176,8 @@ class AvoNetworkCallsHandler {
         .post(_trackingEndpoint,
             headers: {"Content-Type": "text/plain"}, body: body)
         .then((response) {
-      print(response.body);
+      final body = response.body;
+      print(body);
       onCompleted?.call(null);
     }).onError((error, stackTrace) {
       onCompleted?.call(error.toString());

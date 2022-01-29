@@ -41,10 +41,12 @@ class AvoSessionTracker {
 
   final AvoNetworkCallsHandler networkCallsHandler;
   final SharedPreferences sharedPreferences;
-  final AvoInstallationId avoInstallationId = AvoInstallationId();
+  final AvoInstallationId avoInstallationId;
 
   AvoSessionTracker(
-      {required this.networkCallsHandler, required this.sharedPreferences});
+      {required this.networkCallsHandler,
+      required this.sharedPreferences,
+      required this.avoInstallationId});
 
   void _updateSessionId() {
     final newSessionId = Uuid().v1();
