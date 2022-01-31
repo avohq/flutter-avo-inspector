@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'dart:math';
 
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' show Client;
 import 'package:uuid/uuid.dart';
 
 import 'package:avo_inspector/avo_inspector.dart';
@@ -113,6 +114,8 @@ class AvoNetworkCallsHandler {
   String appName;
   String appVersion;
   String libVersion;
+  double samplingRate = 1.0;
+  Client client = Client();
 
   Uri _trackingEndpoint = Uri.parse("https://api.avo.app/inspector/v1/track");
 
@@ -156,8 +159,15 @@ class AvoNetworkCallsHandler {
         eventSchema: eventSchema);
   }
 
-  void callInspectorWith(
-      {required List<BaseBody> events, Function(String?)? onCompleted}) {
+  Future<void> callInspectorWith(
+      {required List<BaseBody> events, Function(String?)? onCompleted}) async {
+    if (Random().nextDouble() > samplingRate) {
+      if (AvoInspector.shouldLog) {
+        print("Avo Inspector: last event schema dropped due to sampling rate.");
+      }
+      return;
+    }
+
     if (AvoInspector.shouldLog) {
       print("Avo Inspector: events $events");
 
@@ -172,12 +182,13 @@ class AvoNetworkCallsHandler {
 
     final body = json.encode(listOfEventMaps);
 
-    http
+    await client
         .post(_trackingEndpoint,
             headers: {"Content-Type": "text/plain"}, body: body)
         .then((response) {
       final body = response.body;
-      print(body);
+      samplingRate = (json.decode(body)["samplingRate"] + .0);
+      print(samplingRate);
       onCompleted?.call(null);
     }).onError((error, stackTrace) {
       onCompleted?.call(error.toString());
