@@ -87,7 +87,8 @@ void main() {
     expect(isUuid(eventSchemaBody.messageId), true);
     expect(eventSchemaBody.trackingId, "installationId");
     expect(eventSchemaBody.sessionId, "sessionId");
-    expect(eventSchemaBody.createdAt.length, 26);
+    expect(eventSchemaBody.samplingRate, 1.0);
+    expect(eventSchemaBody.createdAt.length, 27);
     expect(eventSchemaBody.createdAt.split(":")[0],
         DateTime.now().toIso8601String().split(":")[0]);
   });

@@ -1,5 +1,6 @@
 library avo_inspector;
 
+import 'package:avo_inspector/avo_batcher.dart';
 import 'package:avo_inspector/avo_installation_id.dart';
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:avo_inspector/avo_parser.dart';
@@ -18,11 +19,50 @@ class AvoInspector {
 
   final AvoInstallationId avoInstallationId = AvoInstallationId();
 
-  AvoInspector(
-      {required this.apiKey,
+  late AvoBatcher _avoBatcher;
+
+  static Future<AvoInspector> create(
+      {required String apiKey,
+      required AvoInspectorEnv env,
+      required String appVersion,
+      required String appName}) async {
+    final sharedPrefs = await SharedPreferences.getInstance();
+
+    return AvoInspector._create(
+        sharedPrefs: sharedPrefs,
+        apiKey: apiKey,
+        env: env,
+        appVersion: appVersion,
+        appName: appName);
+  }
+
+  AvoInspector._create(
+      {required SharedPreferences sharedPrefs,
+      required this.apiKey,
       required this.env,
       required this.appVersion,
-      required this.appName});
+      required this.appName}) {
+    final networkHandler = AvoNetworkCallsHandler(
+        apiKey: this.apiKey,
+        envName: this.env.toString().split('.').last,
+        appName: this.appName,
+        appVersion: this.appVersion,
+        libVersion: "1.0");
+
+    final sessionTracker = AvoSessionTracker(sharedPreferences: sharedPrefs);
+
+    if (env == AvoInspectorEnv.dev) {
+      AvoBatcher.batchSizeThreshold = 1;
+    } else {
+      AvoBatcher.batchSizeThreshold = 30;
+    }
+
+    _avoBatcher = AvoBatcher(
+        sessionTracker: sessionTracker,
+        sharedPreferences: sharedPrefs,
+        networkCallsHandler: networkHandler,
+        avoInstallationId: avoInstallationId.getInstallationId(sharedPrefs));
+  }
 
   Future<List<Map<String, dynamic>>> trackSchemaFromEvent(
       {required String eventName,
@@ -38,29 +78,8 @@ class AvoInspector {
       print("event params $parsedParams");
     }
 
-    final sharedPrefs = await SharedPreferences.getInstance();
-
-    final networkHandler = AvoNetworkCallsHandler(
-        apiKey: this.apiKey,
-        envName: this.env.toString(),
-        appName: this.appName,
-        appVersion: this.appVersion,
-        libVersion: "1.0");
-
-    final sessionsTracker = AvoSessionTracker(
-        networkCallsHandler: networkHandler,
-        sharedPreferences: sharedPrefs,
-        avoInstallationId: avoInstallationId);
-    sessionsTracker
-        .startOrProlongSession(DateTime.now().millisecondsSinceEpoch);
-
-    final eventSchema = networkHandler.bodyForEventSchemaCall(
-        eventName: eventName,
-        eventSchema: parsedParams,
-        sessionId: sessionsTracker.sessionId,
-        installationId: avoInstallationId.getInstallationId(sharedPrefs));
-
-    networkHandler.callInspectorWith(events: [eventSchema]);
+    _avoBatcher.handleTrackSchema(
+        eventName: eventName, eventSchema: parsedParams);
 
     return parsedParams;
   }

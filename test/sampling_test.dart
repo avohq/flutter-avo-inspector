@@ -16,6 +16,10 @@ void main() {
       appVersion: "1.0",
       libVersion: "0.1");
 
+  setUpAll(() {
+    registerFallbackValue(Uri.base);
+  });
+
   test('Default sampling rate is 1', () {
     AvoNetworkCallsHandler networkCallsHandler = AvoNetworkCallsHandler(
         apiKey: "apiKey",

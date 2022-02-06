@@ -18,6 +18,7 @@ abstract class BaseBody {
   String trackingId;
   String createdAt;
   String sessionId;
+  double samplingRate;
 
   BaseBody({
     required this.apiKey,
@@ -29,6 +30,7 @@ abstract class BaseBody {
     required this.trackingId,
     required this.createdAt,
     required this.sessionId,
+    required this.samplingRate,
   });
 
   Map<String, dynamic> toJson() {
@@ -43,24 +45,38 @@ abstract class BaseBody {
       'messageId': messageId,
       'trackingId': trackingId,
       'createdAt': createdAt,
-      'sessionId': sessionId
+      'sessionId': sessionId,
+      'samplingRate': samplingRate
     };
   }
+
+  BaseBody.fromJson(Map<String, dynamic> json)
+      : apiKey = json['apiKey'],
+        appName = json['appName'],
+        appVersion = json['appVersion'],
+        libVersion = json['libVersion'],
+        env = json['env'],
+        messageId = json['messageId'],
+        trackingId = json['trackingId'],
+        createdAt = json['createdAt'],
+        samplingRate = json['samplingRate'],
+        sessionId = json['sessionId'];
 }
 
 class SessionStartedBody extends BaseBody {
   final String type = "sessionStarted";
 
   SessionStartedBody({
-    required apiKey,
-    required appName,
-    required appVersion,
-    required libVersion,
-    required env,
-    required messageId,
-    required trackingId,
-    required createdAt,
-    required sessionId,
+    required String apiKey,
+    required String appName,
+    required String appVersion,
+    required String libVersion,
+    required String env,
+    required String messageId,
+    required String trackingId,
+    required String createdAt,
+    required String sessionId,
+    required double samplingRate
   }) : super(
             apiKey: apiKey,
             appName: appName,
@@ -70,7 +86,10 @@ class SessionStartedBody extends BaseBody {
             messageId: messageId,
             trackingId: trackingId,
             createdAt: createdAt,
-            sessionId: sessionId);
+            sessionId: sessionId,
+            samplingRate: samplingRate);
+
+  SessionStartedBody.fromJson(Map<String, dynamic> json) : super.fromJson(json);
 }
 
 class EventSchemaBody extends BaseBody {
@@ -89,6 +108,7 @@ class EventSchemaBody extends BaseBody {
     required trackingId,
     required createdAt,
     required sessionId,
+    required samplingRate,
     required this.eventName,
     required this.eventSchema,
   }) : super(
@@ -100,12 +120,18 @@ class EventSchemaBody extends BaseBody {
             messageId: messageId,
             trackingId: trackingId,
             createdAt: createdAt,
+            samplingRate: samplingRate,
             sessionId: sessionId);
 
   Map<String, dynamic> toJson() {
     return super.toJson()
-      ..addAll({'eventName': eventName, 'eventProperties': eventSchema});
+      ..addAll({'eventName': eventName, 'eventProperties': eventSchema, 'samplingRate': samplingRate});
   }
+
+  EventSchemaBody.fromJson(Map<String, dynamic> json)
+      : eventName = json["eventName"],
+        eventSchema = (json["eventProperties"] as List).cast<Map<String, dynamic>>(),
+        super.fromJson(json);
 }
 
 class AvoNetworkCallsHandler {
@@ -116,6 +142,8 @@ class AvoNetworkCallsHandler {
   String libVersion;
   double samplingRate = 1.0;
   Client client = Client();
+
+  bool _sending = false;
 
   Uri _trackingEndpoint = Uri.parse("https://api.avo.app/inspector/v1/track");
 
@@ -136,6 +164,7 @@ class AvoNetworkCallsHandler {
         env: this.envName,
         messageId: Uuid().v1(),
         trackingId: installationId,
+        samplingRate: samplingRate,
         createdAt: DateTime.now().toIso8601String(),
         sessionId: sessionId);
   }
@@ -153,14 +182,21 @@ class AvoNetworkCallsHandler {
         env: this.envName,
         messageId: Uuid().v1(),
         trackingId: installationId,
-        createdAt: DateTime.now().toIso8601String(),
+        createdAt: DateTime.now().toIso8601String() + "Z",
         sessionId: sessionId,
         eventName: eventName,
+        samplingRate: samplingRate,
         eventSchema: eventSchema);
   }
 
   Future<void> callInspectorWith(
-      {required List<BaseBody> events, Function(String?)? onCompleted}) async {
+      {required List<BaseBody> events, void Function(String?)? onCompleted}) async {
+    if (_sending) {
+      onCompleted?.call(
+          "Batch sending cancelled because another batch sending is in progress. Your events will be sent with next batch.");
+      return;
+    }
+
     if (Random().nextDouble() > samplingRate) {
       if (AvoInspector.shouldLog) {
         print("Avo Inspector: last event schema dropped due to sampling rate.");
@@ -182,15 +218,17 @@ class AvoNetworkCallsHandler {
 
     final body = json.encode(listOfEventMaps);
 
+    _sending = true;
     await client
         .post(_trackingEndpoint,
             headers: {"Content-Type": "text/plain"}, body: body)
         .then((response) {
       final body = response.body;
       samplingRate = (json.decode(body)["samplingRate"] + .0);
-      print(samplingRate);
+      _sending = false;
       onCompleted?.call(null);
     }).onError((error, stackTrace) {
+      _sending = false;
       onCompleted?.call(error.toString());
     });
   }
