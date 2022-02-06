@@ -1,5 +1,3 @@
-import 'package:avo_inspector/avo_installation_id.dart';
-import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -17,7 +15,7 @@ class AvoSessionTracker {
       if (storedSessionId != null) {
         _sessionId = storedSessionId;
       } else {
-        _updateSessionId();
+        updateSessionId();
       }
     }
 
@@ -25,7 +23,7 @@ class AvoSessionTracker {
   }
 
   int? _lastSessionTimestamp;
-  get lastSessionTimestamp {
+  int get lastSessionTimestamp {
     if (_lastSessionTimestamp == null || _lastSessionTimestamp == 0) {
       final storedTimestamp = sharedPreferences.getInt(lastSessionTimestampKey);
 
@@ -36,39 +34,23 @@ class AvoSessionTracker {
       }
     }
 
-    return _lastSessionTimestamp;
+    return _lastSessionTimestamp!;
   }
 
-  final AvoNetworkCallsHandler networkCallsHandler;
+  set lastSessionTimestamp(int newTimestamp) {
+    _lastSessionTimestamp = newTimestamp;
+
+    sharedPreferences.setInt(
+        AvoSessionTracker.lastSessionTimestampKey, newTimestamp);
+  }
+
   final SharedPreferences sharedPreferences;
-  final AvoInstallationId avoInstallationId;
 
-  AvoSessionTracker(
-      {required this.networkCallsHandler,
-      required this.sharedPreferences,
-      required this.avoInstallationId});
+  AvoSessionTracker({required this.sharedPreferences});
 
-  void _updateSessionId() {
+  void updateSessionId() {
     final newSessionId = Uuid().v1();
     sharedPreferences.setString(sessionIdKey, newSessionId);
     _sessionId = newSessionId;
-  }
-
-  void startOrProlongSession(int atTimeMillis) {
-    final timeSinceLastSession = atTimeMillis - lastSessionTimestamp;
-
-    if (timeSinceLastSession >= sessionLengthMillis) {
-      _updateSessionId();
-      final sessionStartedBody = networkCallsHandler.bodyForSessionStaretedCall(
-          sessionId: sessionId,
-          installationId:
-              avoInstallationId.getInstallationId(sharedPreferences));
-
-      networkCallsHandler.callInspectorWith(events: [sessionStartedBody]);
-    }
-
-    _lastSessionTimestamp = atTimeMillis;
-
-    sharedPreferences.setInt(lastSessionTimestampKey, atTimeMillis);
   }
 }

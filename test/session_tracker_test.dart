@@ -1,4 +1,3 @@
-import 'package:avo_inspector/avo_installation_id.dart';
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:avo_inspector/avo_session_tracker.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,8 +16,7 @@ void main() {
   AvoNetworkCallsHandler mockNetworkHandler = MockAvoNetworkCallsHandler();
 
   AvoSessionTracker createAvoSessionTracker(SharedPreferences prefs) {
-    return AvoSessionTracker(
-        networkCallsHandler: mockNetworkHandler, sharedPreferences: prefs, avoInstallationId: AvoInstallationId());
+    return AvoSessionTracker(sharedPreferences: prefs);
   }
 
   setUp(() {
@@ -133,54 +131,5 @@ void main() {
 
     // Then
     expect(oldLastSessionTimestamp, newLastSessionTimestamp);
-  });
-
-  test('starts a session if timestamp is 5 mins ago', () async {
-    // Given
-    SharedPreferences.setMockInitialValues(
-        {"AvoInspectorInstallationId": "stored-installation-id"});
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final avoSessionTracker = createAvoSessionTracker(prefs);
-    expect(avoSessionTracker.lastSessionTimestamp, 0);
-    final newTimestamp = 5 * 60 * 1000;
-    final initialSessionId = avoSessionTracker.sessionId;
-
-    // When
-    avoSessionTracker.startOrProlongSession(newTimestamp);
-
-    // Then
-    expect(avoSessionTracker.lastSessionTimestamp, newTimestamp);
-    verify(() => mockNetworkHandler.bodyForSessionStaretedCall(
-        sessionId: any(named: "sessionId"),
-        installationId: "stored-installation-id")).called(1);
-    verify(() =>
-            mockNetworkHandler.callInspectorWith(events: any(named: "events")))
-        .called(1);
-    expect(avoSessionTracker.sessionId, isNot(initialSessionId));
-    expect(prefs.getInt("AvoSessionTimestampId"), newTimestamp);
-  });
-
-  test('starts a session if timestamp is 5- mins ago', () async {
-    // Given
-    SharedPreferences.setMockInitialValues(
-        {"AvoInspectorInstallationId": "stored-installation-id"});
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final avoSessionTracker = createAvoSessionTracker(prefs);
-    expect(avoSessionTracker.lastSessionTimestamp, 0);
-    final newTimestamp = 5 * 60 * 1000 - 1;
-    final initialSessionId = avoSessionTracker.sessionId;
-
-    // When
-    avoSessionTracker.startOrProlongSession(newTimestamp);
-
-    // Then
-    expect(avoSessionTracker.lastSessionTimestamp, newTimestamp);
-    verifyNever(() => mockNetworkHandler.bodyForSessionStaretedCall(
-        sessionId: any(named: "sessionId"),
-        installationId: "stored-installation-id"));
-    verifyNever(() =>
-            mockNetworkHandler.callInspectorWith(events: any(named: "events")));
-    expect(avoSessionTracker.sessionId, initialSessionId);
-    expect(prefs.getInt("AvoSessionTimestampId"), newTimestamp);
   });
 }
