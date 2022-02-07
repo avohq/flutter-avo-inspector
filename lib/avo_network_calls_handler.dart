@@ -66,18 +66,18 @@ abstract class BaseBody {
 class SessionStartedBody extends BaseBody {
   final String type = "sessionStarted";
 
-  SessionStartedBody({
-    required String apiKey,
-    required String appName,
-    required String appVersion,
-    required String libVersion,
-    required String env,
-    required String messageId,
-    required String trackingId,
-    required String createdAt,
-    required String sessionId,
-    required double samplingRate
-  }) : super(
+  SessionStartedBody(
+      {required String apiKey,
+      required String appName,
+      required String appVersion,
+      required String libVersion,
+      required String env,
+      required String messageId,
+      required String trackingId,
+      required String createdAt,
+      required String sessionId,
+      required double samplingRate})
+      : super(
             apiKey: apiKey,
             appName: appName,
             appVersion: appVersion,
@@ -125,12 +125,17 @@ class EventSchemaBody extends BaseBody {
 
   Map<String, dynamic> toJson() {
     return super.toJson()
-      ..addAll({'eventName': eventName, 'eventProperties': eventSchema, 'samplingRate': samplingRate});
+      ..addAll({
+        'eventName': eventName,
+        'eventProperties': eventSchema,
+        'samplingRate': samplingRate
+      });
   }
 
   EventSchemaBody.fromJson(Map<String, dynamic> json)
       : eventName = json["eventName"],
-        eventSchema = (json["eventProperties"] as List).cast<Map<String, dynamic>>(),
+        eventSchema =
+            (json["eventProperties"] as List).cast<Map<String, dynamic>>(),
         super.fromJson(json);
 }
 
@@ -190,7 +195,8 @@ class AvoNetworkCallsHandler {
   }
 
   Future<void> callInspectorWith(
-      {required List<BaseBody> events, void Function(String?)? onCompleted}) async {
+      {required List<BaseBody> events,
+      void Function(String?)? onCompleted}) async {
     if (_sending) {
       onCompleted?.call(
           "Batch sending cancelled because another batch sending is in progress. Your events will be sent with next batch.");
@@ -223,10 +229,14 @@ class AvoNetworkCallsHandler {
         .post(_trackingEndpoint,
             headers: {"Content-Type": "text/plain"}, body: body)
         .then((response) {
-      final body = response.body;
-      samplingRate = (json.decode(body)["samplingRate"] + .0);
-      _sending = false;
-      onCompleted?.call(null);
+      if (response.statusCode == 200) {
+        final body = response.body;
+        samplingRate = (json.decode(body)["samplingRate"] + .0);
+        _sending = false;
+        onCompleted?.call(null);
+      } else {
+        onCompleted?.call("${response.body} ${response.statusCode}");
+      }
     }).onError((error, stackTrace) {
       _sending = false;
       onCompleted?.call(error.toString());
