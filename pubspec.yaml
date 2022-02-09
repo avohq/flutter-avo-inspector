@@ -1,7 +1,7 @@
 name: avo_inspector
-description: Avo Inspector for Flutter.
-version: 0.0.1
-homepage:
+description: Avo Inspector for Dart.
+version: 0.9.9
+homepage: https://www.avo.app/inspector
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
