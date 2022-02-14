@@ -41,11 +41,7 @@ Logs are enabled by default in the dev mode and disabled in prod mode.
 AvoInspector.shouldLog = true;
 ```
 
-# Sending event schemas for events reported outside of Avo Functions
-
-Whenever you send tracking event call one of the following methods:
-
-Read more in the [Avo documentation](https://www.avo.app/docs/implementation/devs-101#inspecting-events)
+# Sending event schemas to Avo Inspector
 
 This method gets actual tracking event parameters, extracts schema automatically and sends it to the Avo Inspector backend.
 Just call this method at the same place you call your analytics tools' track methods with the same parameters.
@@ -59,6 +55,8 @@ avoInspector.trackSchemaFromEvent(
                 "Boolean Prop": true});
 ```
 
+Read more in the [Avo documentation](https://www.avo.app/docs/implementation/avo-inspector-overview)
+
 # Batching control
 
 In order to ensure our SDK doesn't have a large impact on performance or battery life it supports event schemas batching.
@@ -66,7 +64,7 @@ In order to ensure our SDK doesn't have a large impact on performance or battery
 Default batch size is 30 and default batch flush timeout is 30 seconds.
 In development mode batching is disabled.
 
-```javascript
+```dart
 AvoBatcher.batchSizeThreshold = 10;
 AvoBatcher.batchFlushSecondsThreshold = 10;
 ```
