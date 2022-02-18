@@ -135,8 +135,7 @@ class AvoBatcher {
 
     final eventsJson = _eventsAsJson();
 
-    sharedPreferences.setStringList(
-        diskBatcherStorageCacheKey, eventsJson);
+    sharedPreferences.setStringList(diskBatcherStorageCacheKey, eventsJson);
   }
 
   List<String> _eventsAsJson() {
