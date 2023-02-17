@@ -3,26 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:avo_inspector/avo_inspector.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 AvoInspector? avoInspector;
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  MyApp({Key? key}) : super(key: key) {
+    AvoInspector.create(
+            apiKey: "my api key",
+            env: AvoInspectorEnv.dev,
+            appVersion: "1.0",
+            appName: "Flutter test")
+        .then((inspector) {
+      avoInspector = inspector;
+      avoInspector
+          ?.trackSchemaFromEvent(eventName: "App Open", eventProperties: {});
+    });
+  }
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     AvoInspector.shouldLog = true;
-
-    avoInspector = AvoInspector(
-        apiKey: "my api key",
-        env: AvoInspectorEnv.dev,
-        appVersion: "1.0",
-        appName: "Flutter test");
-    avoInspector
-        ?.trackSchemaFromEvent(eventName: "App Open", eventProperties: {});
 
     return MaterialApp(
       title: 'Flutter Demo',
@@ -50,7 +53,8 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _counter++;
     });
-    avoInspector?.trackSchemaFromEvent(eventName: "Counter++", eventProperties: {"counter" : _counter});
+    avoInspector?.trackSchemaFromEvent(
+        eventName: "Counter++", eventProperties: {"counter": _counter});
   }
 
   @override
