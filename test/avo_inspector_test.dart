@@ -16,7 +16,7 @@ void main() {
   });
 
   test('trackSchemaFromEvent returns the params schema', () {
-    final result = sut.trackSchemaFromEvent("Event 0", {"param0" : "value0", "param1" : "value1"});
+    final result = sut.trackSchemaFromEvent(eventName: "Event 0", eventProperties: {"param0" : "value0", "param1" : "value1"});
 
     expect(result.length, 2);
     expect(result[0]["propertyName"], "param0");
@@ -27,6 +27,6 @@ void main() {
 
   test('trackSchemaFromEvent prints when the logs are enabled', () {
     sut.shouldLog = true;
-    sut.trackSchemaFromEvent("Event 0", {"param0" : "value0", "param1" : "value1"});
+    sut.trackSchemaFromEvent(eventName: "Event 0", eventProperties: {"param0" : "value0", "param1" : "value1"});
   });
 }
