@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
     AvoInspector.shouldLog = true;
 
     avoInspector = AvoInspector(
-        apiKey: "FCAUwJiSGWmI7nJaqtNr",
+        apiKey: "my api key",
         env: AvoInspectorEnv.dev,
         appVersion: "1.0",
         appName: "Flutter test");
