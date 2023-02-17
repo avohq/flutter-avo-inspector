@@ -1,3 +1,4 @@
+import 'package:avo_inspector/avo_installation_id.dart';
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:avo_inspector/avo_session_tracker.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +18,7 @@ void main() {
 
   AvoSessionTracker createAvoSessionTracker(SharedPreferences prefs) {
     return AvoSessionTracker(
-        networkCallsHandler: mockNetworkHandler, sharedPreferences: prefs);
+        networkCallsHandler: mockNetworkHandler, sharedPreferences: prefs, avoInstallationId: AvoInstallationId());
   }
 
   setUp(() {

@@ -1,7 +1,10 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:avo_inspector/avo_inspector.dart';
+import 'dart:math';
+
+import 'package:http/http.dart' show Client;
 import 'package:uuid/uuid.dart';
+
+import 'package:avo_inspector/avo_inspector.dart';
 
 abstract class BaseBody {
   String type = "base";
@@ -70,12 +73,49 @@ class SessionStartedBody extends BaseBody {
             sessionId: sessionId);
 }
 
+class EventSchemaBody extends BaseBody {
+  final String type = "event";
+
+  final String eventName;
+  final List<Map<String, dynamic>> eventSchema;
+
+  EventSchemaBody({
+    required apiKey,
+    required appName,
+    required appVersion,
+    required libVersion,
+    required env,
+    required messageId,
+    required trackingId,
+    required createdAt,
+    required sessionId,
+    required this.eventName,
+    required this.eventSchema,
+  }) : super(
+            apiKey: apiKey,
+            appName: appName,
+            appVersion: appVersion,
+            libVersion: libVersion,
+            env: env,
+            messageId: messageId,
+            trackingId: trackingId,
+            createdAt: createdAt,
+            sessionId: sessionId);
+
+  Map<String, dynamic> toJson() {
+    return super.toJson()
+      ..addAll({'eventName': eventName, 'eventProperties': eventSchema});
+  }
+}
+
 class AvoNetworkCallsHandler {
   String apiKey;
   String envName;
   String appName;
   String appVersion;
   String libVersion;
+  double samplingRate = 1.0;
+  Client client = Client();
 
   Uri _trackingEndpoint = Uri.parse("https://api.avo.app/inspector/v1/track");
 
@@ -86,7 +126,8 @@ class AvoNetworkCallsHandler {
       required this.appVersion,
       required this.libVersion});
 
-  SessionStartedBody bodyForSessionStaretedCall({required String sessionId, required String installationId}) {
+  SessionStartedBody bodyForSessionStaretedCall(
+      {required String sessionId, required String installationId}) {
     return SessionStartedBody(
         apiKey: this.apiKey,
         appName: this.appName,
@@ -99,8 +140,34 @@ class AvoNetworkCallsHandler {
         sessionId: sessionId);
   }
 
-  void callInspectorWith(
-      {required List<BaseBody> events, Function(String?)? onCompleted}) {
+  EventSchemaBody bodyForEventSchemaCall(
+      {required String eventName,
+      required List<Map<String, dynamic>> eventSchema,
+      required String sessionId,
+      required String installationId}) {
+    return EventSchemaBody(
+        apiKey: this.apiKey,
+        appName: this.appName,
+        appVersion: this.appVersion,
+        libVersion: this.libVersion,
+        env: this.envName,
+        messageId: Uuid().v1(),
+        trackingId: installationId,
+        createdAt: DateTime.now().toIso8601String(),
+        sessionId: sessionId,
+        eventName: eventName,
+        eventSchema: eventSchema);
+  }
+
+  Future<void> callInspectorWith(
+      {required List<BaseBody> events, Function(String?)? onCompleted}) async {
+    if (Random().nextDouble() > samplingRate) {
+      if (AvoInspector.shouldLog) {
+        print("Avo Inspector: last event schema dropped due to sampling rate.");
+      }
+      return;
+    }
+
     if (AvoInspector.shouldLog) {
       print("Avo Inspector: events $events");
 
@@ -115,11 +182,13 @@ class AvoNetworkCallsHandler {
 
     final body = json.encode(listOfEventMaps);
 
-    http
+    await client
         .post(_trackingEndpoint,
             headers: {"Content-Type": "text/plain"}, body: body)
         .then((response) {
-      print(response.body);
+      final body = response.body;
+      samplingRate = (json.decode(body)["samplingRate"] + .0);
+      print(samplingRate);
       onCompleted?.call(null);
     }).onError((error, stackTrace) {
       onCompleted?.call(error.toString());
