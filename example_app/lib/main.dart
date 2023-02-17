@@ -14,13 +14,13 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    AvoInspector.enableLogs(true);
+    AvoInspector.shouldLog = true;
 
     avoInspector = AvoInspector(
         apiKey: "my api key",
         env: AvoInspectorEnv.dev,
-        appVersion: "",
-        appName: "");
+        appVersion: "1.0",
+        appName: "Flutter test");
     avoInspector
         ?.trackSchemaFromEvent(eventName: "App Open", eventProperties: {});
 
