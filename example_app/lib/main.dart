@@ -11,7 +11,7 @@ AvoInspector? avoInspector;
 class MyApp extends StatelessWidget {
   MyApp({Key? key}) : super(key: key) {
     AvoInspector.create(
-            apiKey: "FCAUwJiSGWmI7nJaqtNr",
+            apiKey: "my api key",
             env: AvoInspectorEnv.dev,
             appVersion: "1.0",
             appName: "Flutter test")
