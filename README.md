@@ -10,7 +10,7 @@ This will add a line like this to your package's pubspec.yaml (and run an implic
 
 ```
 dependencies:
-  avo_inspector: ^0.9.9
+  avo_inspector: ^1.0.0
 ```
 
 ## Import it
