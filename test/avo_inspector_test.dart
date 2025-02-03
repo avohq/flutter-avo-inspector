@@ -9,7 +9,7 @@ void main() {
   });
 
   test('Dev should set batch size to 1 by default', () async {
-    AvoInspector sut = await AvoInspector.create(
+    AvoInspector _ = await AvoInspector.create(
         apiKey: "apiKey",
         env: AvoInspectorEnv.dev,
         appVersion: "1.9",
@@ -19,7 +19,7 @@ void main() {
   });
 
   test('Prod should set batch size to 30 by default', () async {
-    AvoInspector sut = await AvoInspector.create(
+    AvoInspector _ = await AvoInspector.create(
         apiKey: "apiKey",
         env: AvoInspectorEnv.prod,
         appVersion: "1.9",
