@@ -4,20 +4,20 @@ version: 1.0.0
 homepage: https://www.avo.app/inspector
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=2.12.0 <4.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.4
-  shared_preferences: ^2.0.12
-  uuid: ^3.0.5
+  http: ^1.3.0
+  shared_preferences: ^2.5.0
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  mocktail: ^0.2.0
+  mocktail: ^1.0.4
 
 flutter:
 
