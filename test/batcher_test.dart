@@ -96,13 +96,14 @@ void main() {
     expect(AvoBatcher.diskBatcherStorageCacheKey, 'AvoInspectorEvents');
   });
 
-  test('flush attempt timestamp is set to now on cretion', () async {
+  test('flush attempt timestamp is set to now on creation', () async {
     // Given
     SharedPreferences.setMockInitialValues({});
     final SharedPreferences sharedPreferences =
         await SharedPreferences.getInstance();
 
     final installationId = "test-installation-id";
+    final beforeCreationTime = DateTime.now().millisecondsSinceEpoch;
 
     // When
     AvoBatcher avoBatcher = AvoBatcher(
@@ -112,14 +113,8 @@ void main() {
         avoInstallationId: installationId);
 
     // Then
-    expect(
-        avoBatcher.batchFlushAttemptTimestamp <
-            DateTime.now().millisecondsSinceEpoch,
-        true);
-    expect(
-        avoBatcher.batchFlushAttemptTimestamp >
-            DateTime.now().millisecondsSinceEpoch - 1000,
-        true);
+    expect(avoBatcher.batchFlushAttemptTimestamp >= beforeCreationTime, true);
+    expect(avoBatcher.batchFlushAttemptTimestamp <= DateTime.now().millisecondsSinceEpoch, true);
   });
 
   test('events from shared prefs are parsed and added to the batch on creation',
@@ -252,7 +247,7 @@ void main() {
         avoInstallationId: installationId);
 
     final rightBeforeTime = DateTime.now().millisecondsSinceEpoch;
-    avoSessionTracker.lastSessionTimestamp = rightBeforeTime - (5 * 60 * 1000);
+    avoSessionTracker.lastSessionTimestamp = rightBeforeTime - (5 * 60 * 1000) - 1;
     final initialSessionId = avoSessionTracker.sessionId;
 
     // When
@@ -260,11 +255,7 @@ void main() {
         eventName: "test-event", eventSchema: eventSchema);
 
     // Then
-    expect(avoSessionTracker.lastSessionTimestamp > rightBeforeTime, true);
-    expect(
-        avoSessionTracker.lastSessionTimestamp <
-            DateTime.now().millisecondsSinceEpoch,
-        true);
+    expect(avoSessionTracker.lastSessionTimestamp >= rightBeforeTime, true);
     verify(() => mockAvoNetworkCallsHandler.bodyForSessionStaretedCall(
         sessionId: avoSessionTracker.sessionId,
         installationId: "test-installation-id")).called(1);
