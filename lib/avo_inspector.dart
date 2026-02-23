@@ -66,7 +66,8 @@ class AvoInspector {
         envName: this.env.toString().split('.').last,
         appName: this.appName,
         appVersion: this.appVersion,
-        libVersion: "1.0");
+        libVersion: "1.0",
+        publicEncryptionKey: this.publicEncryptionKey);
 
     if (env == AvoInspectorEnv.dev) {
       AvoBatcher.batchSizeThreshold = 1;

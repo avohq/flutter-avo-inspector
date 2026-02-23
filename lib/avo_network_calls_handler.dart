@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:http/http.dart' show Client;
 import 'package:uuid/uuid.dart';
 
+import 'package:avo_inspector/avo_encryption.dart';
 import 'package:avo_inspector/avo_inspector.dart';
 
 abstract class BaseBody {
@@ -18,6 +19,7 @@ abstract class BaseBody {
   String anonymousId;
   String createdAt;
   double samplingRate;
+  String? publicEncryptionKey;
 
   BaseBody({
     required this.apiKey,
@@ -29,10 +31,11 @@ abstract class BaseBody {
     required this.anonymousId,
     required this.createdAt,
     required this.samplingRate,
+    this.publicEncryptionKey,
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       'type': type,
       'apiKey': apiKey,
       'appName': appName,
@@ -43,8 +46,13 @@ abstract class BaseBody {
       'messageId': messageId,
       'anonymousId': anonymousId,
       'createdAt': createdAt,
-      'samplingRate': samplingRate
+      'samplingRate': samplingRate,
     };
+    // Include publicEncryptionKey only when non-null and non-empty
+    if (publicEncryptionKey != null && publicEncryptionKey!.isNotEmpty) {
+      map['publicEncryptionKey'] = publicEncryptionKey;
+    }
+    return map;
   }
 
   BaseBody.fromJson(Map<String, dynamic> json)
@@ -56,7 +64,8 @@ abstract class BaseBody {
         messageId = json['messageId'],
         anonymousId = json['anonymousId'] ?? json['trackingId'] ?? '',
         createdAt = json['createdAt'],
-        samplingRate = json['samplingRate'];
+        samplingRate = json['samplingRate'],
+        publicEncryptionKey = json['publicEncryptionKey'];
 }
 
 class EventSchemaBody extends BaseBody {
@@ -77,6 +86,7 @@ class EventSchemaBody extends BaseBody {
     required samplingRate,
     required this.eventName,
     required this.eventSchema,
+    String? publicEncryptionKey,
   }) : super(
             apiKey: apiKey,
             appName: appName,
@@ -86,7 +96,8 @@ class EventSchemaBody extends BaseBody {
             messageId: messageId,
             anonymousId: anonymousId,
             createdAt: createdAt,
-            samplingRate: samplingRate);
+            samplingRate: samplingRate,
+            publicEncryptionKey: publicEncryptionKey);
 
   Map<String, dynamic> toJson() {
     return super.toJson()
@@ -110,6 +121,7 @@ class AvoNetworkCallsHandler {
   String appName;
   String appVersion;
   String libVersion;
+  String? publicEncryptionKey;
   double samplingRate = 1.0;
   Client client = Client();
 
@@ -122,12 +134,29 @@ class AvoNetworkCallsHandler {
       required this.envName,
       required this.appName,
       required this.appVersion,
-      required this.libVersion});
+      required this.libVersion,
+      this.publicEncryptionKey});
 
+  /// Builds an [EventSchemaBody] for the given event, applying ECIES encryption
+  /// to property values when:
+  ///   - env is dev or staging
+  ///   - publicEncryptionKey is non-null and non-empty
+  ///
+  /// For list-type properties, the property is omitted entirely (not encrypted,
+  /// not sent unencrypted).
+  ///
+  /// On encryption failure the property is omitted and a warning is logged.
   EventSchemaBody bodyForEventSchemaCall(
       {required String eventName,
       required List<Map<String, dynamic>> eventSchema,
       required String anonymousId}) {
+    final shouldEncrypt =
+        AvoEncryption.shouldEncrypt(envName, publicEncryptionKey);
+
+    final processedSchema = shouldEncrypt
+        ? _applyEncryption(eventSchema)
+        : eventSchema;
+
     return EventSchemaBody(
         apiKey: this.apiKey,
         appName: this.appName,
@@ -139,7 +168,67 @@ class AvoNetworkCallsHandler {
         createdAt: DateTime.now().toIso8601String() + "Z",
         eventName: eventName,
         samplingRate: samplingRate,
-        eventSchema: eventSchema);
+        eventSchema: processedSchema,
+        publicEncryptionKey: publicEncryptionKey);
+  }
+
+  /// Processes an event schema for encryption.
+  ///
+  /// - List-type properties are omitted entirely.
+  /// - For other properties with a propertyValue field, the value is encrypted.
+  /// - On encryption failure the property is omitted (fail-closed).
+  List<Map<String, dynamic>> _applyEncryption(
+      List<Map<String, dynamic>> schema) {
+    final result = <Map<String, dynamic>>[];
+
+    for (final prop in schema) {
+      final propertyType = prop['propertyType'] as String?;
+
+      // List-type properties are omitted entirely (per acceptance criteria).
+      if (propertyType == 'list') {
+        continue;
+      }
+
+      // If the property has a propertyValue, try to encrypt it.
+      if (prop.containsKey('propertyValue')) {
+        final propertyValue = prop['propertyValue'];
+        final plaintextJson = _toJsonString(propertyValue);
+
+        if (plaintextJson != null) {
+          final encrypted = AvoEncryption.encryptPropertyValue(
+              plaintextJson, publicEncryptionKey);
+
+          if (encrypted != null) {
+            // Replace propertyValue with encryptedPropertyValue
+            final encryptedProp = Map<String, dynamic>.from(prop);
+            encryptedProp.remove('propertyValue');
+            encryptedProp['encryptedPropertyValue'] = encrypted;
+            result.add(encryptedProp);
+          } else {
+            // Encryption failed — omit property entirely (fail-closed).
+            // Warning already logged by AvoEncryption.encrypt().
+          }
+        } else {
+          // Cannot serialize value — omit property (fail-closed).
+        }
+      } else {
+        // No propertyValue field — include as-is (type-only schema entry).
+        result.add(prop);
+      }
+    }
+
+    return result;
+  }
+
+  /// Converts a Dart value to its JSON string representation.
+  ///
+  /// Returns null if the value cannot be serialized.
+  String? _toJsonString(dynamic value) {
+    try {
+      return json.encode(value);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> callInspectorWith(

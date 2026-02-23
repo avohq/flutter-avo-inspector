@@ -60,7 +60,8 @@ class EventValidator {
     // Global bandwidth optimization
     List<String> optimizedPassed;
     List<String> optimizedFailed;
-    if (passedEventIds.length < failedEventIds.length) {
+    if (passedEventIds.length < failedEventIds.length &&
+        passedEventIds.isNotEmpty) {
       optimizedPassed = passedEventIds;
       optimizedFailed = [];
     } else {
