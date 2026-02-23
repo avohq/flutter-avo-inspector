@@ -1,10 +1,9 @@
 library avo_inspector;
 
+import 'package:avo_inspector/avo_anonymous_id.dart';
 import 'package:avo_inspector/avo_batcher.dart';
-import 'package:avo_inspector/avo_installation_id.dart';
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 import 'package:avo_inspector/avo_parser.dart';
-import 'package:avo_inspector/avo_session_tracker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum AvoInspectorEnv { prod, dev, staging }
@@ -14,10 +13,9 @@ class AvoInspector {
   AvoInspectorEnv env;
   String appVersion;
   String appName;
+  String? publicEncryptionKey;
 
   static bool shouldLog = false;
-
-  final AvoInstallationId avoInstallationId = AvoInstallationId();
 
   late AvoBatcher _avoBatcher;
 
@@ -25,15 +23,21 @@ class AvoInspector {
       {required String apiKey,
       required AvoInspectorEnv env,
       required String appVersion,
-      required String appName}) async {
+      required String appName,
+      String? publicEncryptionKey}) async {
     final sharedPrefs = await SharedPreferences.getInstance();
+
+    final anonymousIdProvider = AvoAnonymousId();
+    final anonymousId = await anonymousIdProvider.getAnonymousId();
 
     return AvoInspector._create(
         sharedPrefs: sharedPrefs,
         apiKey: apiKey,
         env: env,
         appVersion: appVersion,
-        appName: appName);
+        appName: appName,
+        publicEncryptionKey: publicEncryptionKey,
+        anonymousId: anonymousId);
   }
 
   AvoInspector._create(
@@ -41,15 +45,15 @@ class AvoInspector {
       required this.apiKey,
       required this.env,
       required this.appVersion,
-      required this.appName}) {
+      required this.appName,
+      this.publicEncryptionKey,
+      required String anonymousId}) {
     final networkHandler = AvoNetworkCallsHandler(
         apiKey: this.apiKey,
         envName: this.env.toString().split('.').last,
         appName: this.appName,
         appVersion: this.appVersion,
         libVersion: "1.0");
-
-    final sessionTracker = AvoSessionTracker(sharedPreferences: sharedPrefs);
 
     if (env == AvoInspectorEnv.dev) {
       AvoBatcher.batchSizeThreshold = 1;
@@ -58,10 +62,9 @@ class AvoInspector {
     }
 
     _avoBatcher = AvoBatcher(
-        sessionTracker: sessionTracker,
         sharedPreferences: sharedPrefs,
         networkCallsHandler: networkHandler,
-        avoInstallationId: avoInstallationId.getInstallationId(sharedPrefs));
+        avoAnonymousId: anonymousId);
   }
 
   Future<List<Map<String, dynamic>>> trackSchemaFromEvent(

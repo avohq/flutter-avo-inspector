@@ -15,9 +15,8 @@ abstract class BaseBody {
   String env;
   final String libPlatform = "flutter";
   String messageId;
-  String trackingId;
+  String anonymousId;
   String createdAt;
-  String sessionId;
   double samplingRate;
 
   BaseBody({
@@ -27,9 +26,8 @@ abstract class BaseBody {
     required this.libVersion,
     required this.env,
     required this.messageId,
-    required this.trackingId,
+    required this.anonymousId,
     required this.createdAt,
-    required this.sessionId,
     required this.samplingRate,
   });
 
@@ -43,9 +41,8 @@ abstract class BaseBody {
       'env': env,
       'libPlatform': libPlatform,
       'messageId': messageId,
-      'trackingId': trackingId,
+      'anonymousId': anonymousId,
       'createdAt': createdAt,
-      'sessionId': sessionId,
       'samplingRate': samplingRate
     };
   }
@@ -57,39 +54,9 @@ abstract class BaseBody {
         libVersion = json['libVersion'],
         env = json['env'],
         messageId = json['messageId'],
-        trackingId = json['trackingId'],
+        anonymousId = json['anonymousId'] ?? json['trackingId'] ?? '',
         createdAt = json['createdAt'],
-        samplingRate = json['samplingRate'],
-        sessionId = json['sessionId'];
-}
-
-class SessionStartedBody extends BaseBody {
-  final String type = "sessionStarted";
-
-  SessionStartedBody(
-      {required String apiKey,
-      required String appName,
-      required String appVersion,
-      required String libVersion,
-      required String env,
-      required String messageId,
-      required String trackingId,
-      required String createdAt,
-      required String sessionId,
-      required double samplingRate})
-      : super(
-            apiKey: apiKey,
-            appName: appName,
-            appVersion: appVersion,
-            libVersion: libVersion,
-            env: env,
-            messageId: messageId,
-            trackingId: trackingId,
-            createdAt: createdAt,
-            sessionId: sessionId,
-            samplingRate: samplingRate);
-
-  SessionStartedBody.fromJson(Map<String, dynamic> json) : super.fromJson(json);
+        samplingRate = json['samplingRate'];
 }
 
 class EventSchemaBody extends BaseBody {
@@ -105,9 +72,8 @@ class EventSchemaBody extends BaseBody {
     required libVersion,
     required env,
     required messageId,
-    required trackingId,
+    required anonymousId,
     required createdAt,
-    required sessionId,
     required samplingRate,
     required this.eventName,
     required this.eventSchema,
@@ -118,10 +84,9 @@ class EventSchemaBody extends BaseBody {
             libVersion: libVersion,
             env: env,
             messageId: messageId,
-            trackingId: trackingId,
+            anonymousId: anonymousId,
             createdAt: createdAt,
-            samplingRate: samplingRate,
-            sessionId: sessionId);
+            samplingRate: samplingRate);
 
   Map<String, dynamic> toJson() {
     return super.toJson()
@@ -159,26 +124,10 @@ class AvoNetworkCallsHandler {
       required this.appVersion,
       required this.libVersion});
 
-  SessionStartedBody bodyForSessionStaretedCall(
-      {required String sessionId, required String installationId}) {
-    return SessionStartedBody(
-        apiKey: this.apiKey,
-        appName: this.appName,
-        appVersion: this.appVersion,
-        libVersion: this.libVersion,
-        env: this.envName,
-        messageId: Uuid().v1(),
-        trackingId: installationId,
-        samplingRate: samplingRate,
-        createdAt: DateTime.now().toIso8601String(),
-        sessionId: sessionId);
-  }
-
   EventSchemaBody bodyForEventSchemaCall(
       {required String eventName,
       required List<Map<String, dynamic>> eventSchema,
-      required String sessionId,
-      required String installationId}) {
+      required String anonymousId}) {
     return EventSchemaBody(
         apiKey: this.apiKey,
         appName: this.appName,
@@ -186,9 +135,8 @@ class AvoNetworkCallsHandler {
         libVersion: this.libVersion,
         env: this.envName,
         messageId: Uuid().v1(),
-        trackingId: installationId,
+        anonymousId: anonymousId,
         createdAt: DateTime.now().toIso8601String() + "Z",
-        sessionId: sessionId,
         eventName: eventName,
         samplingRate: samplingRate,
         eventSchema: eventSchema);
@@ -212,12 +160,6 @@ class AvoNetworkCallsHandler {
 
     if (AvoInspector.shouldLog) {
       print("Avo Inspector: events $events");
-
-      events.forEach((event) {
-        if (event.type == "sessionStarted") {
-          print("Avo Inspector: sending session started event.");
-        }
-      });
     }
 
     final listOfEventMaps = events.map((e) => e.toJson()).toList();

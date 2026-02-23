@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avo_inspector/avo_network_calls_handler.dart';
 
 import 'avo_inspector.dart';
-import 'avo_session_tracker.dart';
 
 class AvoBatcher {
   static const String diskBatcherStorageCacheKey = "AvoInspectorEvents";
@@ -22,47 +21,23 @@ class AvoBatcher {
   final SharedPreferences sharedPreferences;
   final AvoNetworkCallsHandler networkCallsHandler;
 
-  final String avoInstallationId;
-
-  final AvoSessionTracker sessionTracker;
+  final String avoAnonymousId;
 
   AvoBatcher(
       {required this.sharedPreferences,
       required this.networkCallsHandler,
-      required this.sessionTracker,
-      required this.avoInstallationId})
+      required this.avoAnonymousId})
       : this._batchFlushAttemptTimestamp =
             DateTime.now().millisecondsSinceEpoch {
     _events = sharedPreferences
             .getStringList(diskBatcherStorageCacheKey)
             ?.map((String savedItem) {
           Map<String, dynamic> eventMap = jsonDecode(savedItem);
-          if (eventMap["type"] == "sessionStarted") {
-            return SessionStartedBody.fromJson(eventMap);
-          } else {
-            return EventSchemaBody.fromJson(eventMap);
-          }
+          return EventSchemaBody.fromJson(eventMap);
         }).toList() ??
         [];
 
     _checkIfBatchNeedsToBeSent();
-  }
-
-  void _startOrProlongSession(int atTimeMillis) {
-    final timeSinceLastSession =
-        atTimeMillis - sessionTracker.lastSessionTimestamp;
-
-    if (timeSinceLastSession >= AvoSessionTracker.sessionLengthMillis) {
-      sessionTracker.updateSessionId();
-
-      _events.add(networkCallsHandler.bodyForSessionStaretedCall(
-          sessionId: sessionTracker.sessionId,
-          installationId: avoInstallationId));
-
-      _checkIfBatchNeedsToBeSent();
-    }
-
-    sessionTracker.lastSessionTimestamp = atTimeMillis;
   }
 
   void handleTrackSchema(
@@ -70,13 +45,10 @@ class AvoBatcher {
       required List<Map<String, dynamic>> eventSchema,
       String? eventId,
       String? eventHash}) {
-    _startOrProlongSession(DateTime.now().millisecondsSinceEpoch);
-
     _events.add(networkCallsHandler.bodyForEventSchemaCall(
         eventName: eventName,
         eventSchema: eventSchema,
-        sessionId: sessionTracker.sessionId,
-        installationId: avoInstallationId));
+        anonymousId: avoAnonymousId));
 
     _saveEvents();
 

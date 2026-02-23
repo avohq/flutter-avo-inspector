@@ -4,36 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'test_utils.dart';
 
 void main() {
-  test('bodyForSessionStaretedCall is properly built', () {
-    // Given
-    AvoNetworkCallsHandler networkCallsHandler = AvoNetworkCallsHandler(
-        apiKey: "apiKey",
-        envName: "dev",
-        appName: "tests",
-        appVersion: "1.0",
-        libVersion: "0.1");
-
-    // When
-    SessionStartedBody sessionStartedBody =
-        networkCallsHandler.bodyForSessionStaretedCall(
-            sessionId: "sessionId", installationId: "installationId");
-
-    // Then
-    expect(sessionStartedBody.type, "sessionStarted");
-    expect(sessionStartedBody.apiKey, "apiKey");
-    expect(sessionStartedBody.appName, "tests");
-    expect(sessionStartedBody.appVersion, "1.0");
-    expect(sessionStartedBody.libVersion, "0.1");
-    expect(sessionStartedBody.env, "dev");
-    expect(sessionStartedBody.env, "dev");
-    expect(isUuid(sessionStartedBody.messageId), true);
-    expect(sessionStartedBody.trackingId, "installationId");
-    expect(sessionStartedBody.sessionId, "sessionId");
-    expect(sessionStartedBody.createdAt.length, 26);
-    expect(sessionStartedBody.createdAt.split(":")[0],
-        DateTime.now().toIso8601String().split(":")[0]);
-  });
-
   test('bodyForEventSchemaCall is properly built', () {
     // Given
     AvoNetworkCallsHandler networkCallsHandler = AvoNetworkCallsHandler(
@@ -72,8 +42,7 @@ void main() {
         networkCallsHandler.bodyForEventSchemaCall(
             eventName: "testEvent",
             eventSchema: eventSchema,
-            sessionId: "sessionId",
-            installationId: "installationId");
+            anonymousId: "anonymousId");
 
     // Then
     expect(eventSchemaBody.type, "event");
@@ -83,13 +52,60 @@ void main() {
     expect(eventSchemaBody.appVersion, "1.0");
     expect(eventSchemaBody.libVersion, "0.1");
     expect(eventSchemaBody.env, "dev");
-    expect(eventSchemaBody.env, "dev");
     expect(isUuid(eventSchemaBody.messageId), true);
-    expect(eventSchemaBody.trackingId, "installationId");
-    expect(eventSchemaBody.sessionId, "sessionId");
+    expect(eventSchemaBody.anonymousId, "anonymousId");
     expect(eventSchemaBody.samplingRate, 1.0);
     expect(eventSchemaBody.createdAt.length, 27);
     expect(eventSchemaBody.createdAt.split(":")[0],
         DateTime.now().toIso8601String().split(":")[0]);
+  });
+
+  test('BaseBody.fromJson deserializes anonymousId', () {
+    // Given
+    final json = {
+      'type': 'event',
+      'apiKey': 'key',
+      'appName': 'app',
+      'appVersion': '1.0',
+      'libVersion': '0.1',
+      'env': 'dev',
+      'messageId': 'msg-id',
+      'anonymousId': 'anon-123',
+      'createdAt': '2024-01-01T00:00:00Z',
+      'samplingRate': 1.0,
+      'eventName': 'test',
+      'eventProperties': <Map<String, dynamic>>[{}],
+    };
+
+    // When
+    final body = EventSchemaBody.fromJson(json);
+
+    // Then
+    expect(body.anonymousId, 'anon-123');
+  });
+
+  test('BaseBody.fromJson falls back to trackingId for backwards compatibility',
+      () {
+    // Given - old format with trackingId instead of anonymousId
+    final json = {
+      'type': 'event',
+      'apiKey': 'key',
+      'appName': 'app',
+      'appVersion': '1.0',
+      'libVersion': '0.1',
+      'env': 'dev',
+      'messageId': 'msg-id',
+      'trackingId': 'old-tracking-id',
+      'createdAt': '2024-01-01T00:00:00Z',
+      'samplingRate': 1.0,
+      'eventName': 'test',
+      'eventProperties': <Map<String, dynamic>>[{}],
+    };
+
+    // When
+    final body = EventSchemaBody.fromJson(json);
+
+    // Then
+    expect(body.anonymousId, 'old-tracking-id');
   });
 }
